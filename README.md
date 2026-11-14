@@ -13,9 +13,9 @@ Following on from that I have spent far too many hours messing about with differ
 
 As of 26th October 2026, I am putting my work-so-far on Github, and leaving it there. I'll update the content each time a new Emoji Unicde version is release.
 
-The javascript code I have written is very clunky and inefficient. I initially had a go at improving it using Claude AI, but couldn't really understand the improved code, and it felt like cheating so I'm sticking with my own versions.
+The javascript code I have written is very clunky and inefficient. Out of curiosity, I used Claude AI to revise my version of each page, to be more efficient, and to comment how the code works.
 
-You can see a demo of the versions here:
+You can see a demo of my versions and the Claude AI revised versions here:
 
 https://zzalsjr8.github.io/projects/emoji-browsers/
 
@@ -24,3 +24,4 @@ The pages all use HTML and pull data from .js files.
 If you want to find out about how the .js files were created, I have a repository covering that here:
 
 https://github.com/zzalsjr8/emoji-parse/
+

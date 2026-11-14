@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="https://www.google.com/s2/favicons?sz=64&domain=emojihub.org/" />
+<title>🔎 Emoji Browser - Table</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<link href='https://cdn.datatables.net/v/bs5/jszip-3.10.1/dt-2.3.7/b-3.2.6/b-colvis-3.2.6/b-html5-3.2.6/b-print-3.2.6/r-3.0.8/sc-2.4.3/datatables.min.css' rel='stylesheet' integrity='sha384-VTQSeAIvqWFqITHpNRh6m+AFsTd2wLayRFTKQs4MVQAp4Dq99PvrIg9wRfzafAvs' crossorigin='anonymous'>
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div class="container-fluid">
+	<div class="pb-2 mb-2 pt-2 border-bottom">
+		<h1>🔎 Emoji Browser - Table</h1>
+		<ol class="breadcrumb">
+			<li class="breadcrumb-item"><a href="https://zzalsjr8.github.io/">zzalsjr8</a></li>
+			<li class="breadcrumb-item"><a href="index.html">Emoji Browsers</a></li>
+			<li class="breadcrumb-item active">Emoji Browser - Table</li>
+		</ol>
+		<hr>
+		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">Normal Versions</a> /
+		<a href="emoji-browser-tweakpane.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
+		<a href="emoji-browser-treeview.html" class="btn btn-primary btn-sm">Treeview</a> / 
+		<a href="emoji-browser-slidevars.html" class="btn btn-primary btn-sm">slideVars</a> / 
+		<a href="emoji-browser-simple-slider.html" class="btn btn-primary btn-sm">Simple Slider</a> / 
+		<a href="emoji-browser-table.html" class="btn btn-primary btn-sm">Table</a>
+		<hr>
+		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">AI Revised Versions</a> /
+		<a href="emoji-browser-tweakpane-ai-revised.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
+		<a href="emoji-browser-treeview-ai-revised.html" class="btn btn-primary btn-sm">Treeview</a> / 
+		<a href="emoji-browser-slidevars-ai-revised.html" class="btn btn-primary btn-sm">slideVars</a> / 
+		<a href="emoji-browser-simple-slider-ai-revised.html" class="btn btn-primary btn-sm">Simple Slider</a> / 
+		<a href="emoji-browser-table-ai-revised.html" class="btn btn-success btn-sm">Table</a>
+		<hr>
+		<p>Browse emojis in a table format, using <a href="https://datatables.net/">DataTables - The Javascript Table Solution</a>.</p>
+		<p>The data used to populate the tree browser is stored in a javascript file called <a href="emojis.js">emojis.js</a>, and the emoji data is current as of <a href="https://www.unicode.org/Public/emoji/latest/emoji-test.txt">Emoji Version 18.0</a>. Read more about the version on <a href="https://emojipedia.org/emoji-18.0">Emojipedia</a>.</p>
+		<hr>
+		<table id='e' class='table table-striped table-hover table-sm table-bordered'>
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>Emoji</th>
+					<th>Name</th>
+					<th>Tag</th>
+					<th>Unicode</th>
+					<th>Category</th>
+					<th>Subcategory</th>
+					<th>Version</th>
+				</tr>
+			</thead>
+			<!-- The <tbody> is now empty and unnamed: DataTables creates the rows itself from the data below. -->
+		</table>		
+		<hr>
+	</div>
+	<hr>
+	<p><a href="https://getbootstrap.com/" rel="nofollow">Bootstrap</a> | <a href="https://datatables.net/">DataTables - The Javascript Table Solution</a> | <a href="https://emojipedia.org/" rel="nofollow">Emojipedia</a></p>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src='https://cdn.datatables.net/v/bs5/jszip-3.10.1/dt-2.3.7/b-3.2.6/b-colvis-3.2.6/b-html5-3.2.6/b-print-3.2.6/r-3.0.8/sc-2.4.3/datatables.min.js' integrity='sha384-OoYMCZKaW0oO3nMUw+xDFi3JwbUVIP1jfXU2AHvOETtPx1BreX3SP+mgYQ5SzLwd' crossorigin='anonymous'></script>
+<script src="emojis.js"></script>
+<script>
+
+// ---------------------------------------------------------------------------
+// STEP 1: Turn the nested emoji data into a flat list of table rows.
+//
+// emojis.js gives us "emojiData", which is nested like a set of folders:
+//   emojiData -> categories -> subcategories -> emojis
+// A table is flat (one row per emoji), so we "walk" through every level
+// and collect one row for each emoji we find.
+// ---------------------------------------------------------------------------
+
+// An empty array (list) that will hold all of our rows.
+// "const" means this variable can't be re-assigned to something else later.
+// (We can still add items to the list, which is what we want.)
+const rows = [];
+
+// SHORTHAND #1: "for...of" loop
+// The old way was:  for (let i = 0; i < emojiData.length; i++) { const x = emojiData[i]; ... }
+// That means: keep a counter "i", check it, add 1 to it, and look up each item by number.
+// "for (const category of emojiData)" says "take each item in the list, one at a time,
+// and call it 'category'". Same result, no counter to manage, much less to get wrong.
+for (const category of emojiData) {
+
+	// Each category (e.g. "Smileys & Emotion") has a list of subcategories.
+	for (const subcategory of category.children) {
+
+		// Each subcategory (e.g. "face-smiling") has a list of individual emojis.
+		for (const item of subcategory.children) {
+
+			// SHORTHAND #2: "destructuring"
+			// Instead of writing four separate lines like:
+			//     const description = item.description;
+			//     const tag = item.tag; ...
+			// we can pull several properties out of an object in a single line.
+			// The names inside { } must match the property names in the data.
+			// "name: unicode" means "take the property called 'name' but store it
+			// in a variable called 'unicode'" (a clearer name for us, since in the
+			// data "name" holds the Unicode code points, not the emoji's description).
+			const { description, tag, name: unicode, emoji, version } = item;
+
+			// Add one row to the end of our list. A row is just an array of
+			// 8 values, in the same order as the 8 <th> column headings in the HTML.
+			rows.push([
+				rows.length + 1,   // "#" column. SHORTHAND #3: the list's length is how many rows
+				                   // we've added so far, so length + 1 is the next row number
+				                   // (1, 2, 3...). This replaces the separate "emojiCount" variable.
+				emoji,
+				description,
+				tag,
+				unicode,
+				category.name,     // Same category name for every emoji inside this category
+				subcategory.name,  // Same subcategory name for every emoji inside this subcategory
+				version
+			]);
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// STEP 2: Give the rows to DataTables and let it build the table.
+//
+// WHY THIS IS MORE EFFICIENT than the original:
+//  - The original glued together one giant HTML string (thousands of
+//    "<td>...</td>" pieces), put it into the page with innerHTML, and then made
+//    DataTables read it all back out again. That's two jobs of converting
+//    text <-> page elements.
+//  - Now we hand DataTables the plain data directly via the "data" option, and
+//    it creates the rows itself. Less work for the browser, and less code.
+//  - We also no longer need to wait for $(document).ready(): our <script> tags
+//    are at the bottom of the <body>, so the table already exists on the page
+//    by the time this code runs.
+// ---------------------------------------------------------------------------
+
+// "new DataTable('#e', {...})" turns the <table id="e"> into a searchable,
+// sortable table. '#e' is a CSS-style selector meaning "the element with id 'e'".
+new DataTable('#e', {
+	data: rows,       // Our flat list of rows from Step 1. Each setting is written as
+	                  // "settingName: value". The column order matches the <th> headings.
+
+	order: [],        // Don't re-sort the data: keep the original order from emojis.js.
+	paging: false,    // Show every row on one page instead of splitting into pages.
+
+	layout: {
+		// Put the export buttons at the top left of the table.
+		topStart: {
+			buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+		}
+	}
+});
+
+</script>
+
+</body>
+
+</html>
