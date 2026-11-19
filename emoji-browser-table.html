@@ -9,9 +9,7 @@
 <link href='https://cdn.datatables.net/v/bs5/jszip-3.10.1/dt-2.3.7/b-3.2.6/b-colvis-3.2.6/b-html5-3.2.6/b-print-3.2.6/r-3.0.8/sc-2.4.3/datatables.min.css' rel='stylesheet' integrity='sha384-VTQSeAIvqWFqITHpNRh6m+AFsTd2wLayRFTKQs4MVQAp4Dq99PvrIg9wRfzafAvs' crossorigin='anonymous'>
 <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-
 <div class="container-fluid">
 	<div class="pb-2 mb-2 pt-2 border-bottom">
 		<h1>🔎 Emoji Browser - Table</h1>
@@ -21,19 +19,11 @@
 			<li class="breadcrumb-item active">Emoji Browser - Table</li>
 		</ol>
 		<hr>
-		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">Normal Versions</a> /
 		<a href="emoji-browser-tweakpane.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
 		<a href="emoji-browser-treeview.html" class="btn btn-primary btn-sm">Treeview</a> / 
 		<a href="emoji-browser-slidevars.html" class="btn btn-primary btn-sm">slideVars</a> / 
 		<a href="emoji-browser-simple-slider.html" class="btn btn-primary btn-sm">Simple Slider</a> / 
 		<a href="emoji-browser-table.html" class="btn btn-success btn-sm">Table</a>
-		<hr>
-		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">AI Revised Versions</a> /
-		<a href="emoji-browser-tweakpane-ai-revised.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
-		<a href="emoji-browser-treeview-ai-revised.html" class="btn btn-primary btn-sm">Treeview</a> / 
-		<a href="emoji-browser-slidevars-ai-revised.html" class="btn btn-primary btn-sm">slideVars</a> / 
-		<a href="emoji-browser-simple-slider-ai-revised.html" class="btn btn-primary btn-sm">Simple Slider</a> / 
-		<a href="emoji-browser-table-ai-revised.html" class="btn btn-primary btn-sm">Table</a>
 		<hr>
 		<p>Browse emojis in a table format, using <a href="https://datatables.net/">DataTables - The Javascript Table Solution</a>.</p>
 		<p>The data used to populate the tree browser is stored in a javascript file called <a href="emojis.js">emojis.js</a>, and the emoji data is current as of <a href="https://www.unicode.org/Public/emoji/latest/emoji-test.txt">Emoji Version 18.0</a>. Read more about the version on <a href="https://emojipedia.org/emoji-18.0">Emojipedia</a>.</p>
@@ -51,7 +41,7 @@
 					<th>Version</th>
 				</tr>
 			</thead>
-			<tbody id='tableContent'></tbody>
+			<!-- The <tbody> is now empty and unnamed: DataTables creates the rows itself from the data below. -->
 		</table>		
 		<hr>
 	</div>
@@ -63,56 +53,93 @@
 <script src="emojis.js"></script>
 <script>
 
-let rowHtml = "";
-let emojiCount = 1;
-for(let i = 0; i < emojiData.length; i++){
-	// -----------------> 01 CATEGORY
-	const catItem = emojiData[i];
-	const catName = catItem.name;
-	const catChildren = catItem.children;
-	for(let ii = 0; ii < catChildren.length; ii++){
-		// -----------------> 02 SUBCATEGORY
-		const subItem = catChildren[ii];
-		const subName = subItem.name;
-		const subChildren = subItem.children;
-		for(let iii = 0; iii < subChildren.length; iii++){
-			// -----------------> 03 EMOJI
-			rowHtml += "<tr>";
-			const emjItem = subChildren[iii];
-			const emjDescription = emjItem.description;
-			const emjTag = emjItem.tag;
-			const emjUnicode = emjItem.name;
-			const emjEmoji = emjItem.emoji;
-			const emjVersion = emjItem.version;
-			rowHtml += "<td>" + emojiCount + "</td>";
-			rowHtml += "<td>" + emjEmoji + "</td>";
-			rowHtml += "<td>" + emjDescription + "</td>";
-			rowHtml += "<td>" + emjTag + "</td>";
-			rowHtml += "<td>" + emjUnicode + "</td>";
-			rowHtml += "<td>" + catName + "</td>";
-			rowHtml += "<td>" + subName + "</td>";
-			rowHtml += "<td>" + emjVersion + "</td>";
-			rowHtml += "</tr>";
-			emojiCount++;
+// ---------------------------------------------------------------------------
+// STEP 1: Turn the nested emoji data into a flat list of table rows.
+//
+// emojis.js gives us "emojiData", which is nested like a set of folders:
+//   emojiData -> categories -> subcategories -> emojis
+// A table is flat (one row per emoji), so we "walk" through every level
+// and collect one row for each emoji we find.
+// ---------------------------------------------------------------------------
+
+// An empty array (list) that will hold all of our rows.
+// "const" means this variable can't be re-assigned to something else later.
+// (We can still add items to the list, which is what we want.)
+const rows = [];
+
+// SHORTHAND #1: "for...of" loop
+// The old way was:  for (let i = 0; i < emojiData.length; i++) { const x = emojiData[i]; ... }
+// That means: keep a counter "i", check it, add 1 to it, and look up each item by number.
+// "for (const category of emojiData)" says "take each item in the list, one at a time,
+// and call it 'category'". Same result, no counter to manage, much less to get wrong.
+for (const category of emojiData) {
+
+	// Each category (e.g. "Smileys & Emotion") has a list of subcategories.
+	for (const subcategory of category.children) {
+
+		// Each subcategory (e.g. "face-smiling") has a list of individual emojis.
+		for (const item of subcategory.children) {
+
+			// SHORTHAND #2: "destructuring"
+			// Instead of writing four separate lines like:
+			//     const description = item.description;
+			//     const tag = item.tag; ...
+			// we can pull several properties out of an object in a single line.
+			// The names inside { } must match the property names in the data.
+			// "name: unicode" means "take the property called 'name' but store it
+			// in a variable called 'unicode'" (a clearer name for us, since in the
+			// data "name" holds the Unicode code points, not the emoji's description).
+			const { description, tag, name: unicode, emoji, version } = item;
+
+			// Add one row to the end of our list. A row is just an array of
+			// 8 values, in the same order as the 8 <th> column headings in the HTML.
+			rows.push([
+				rows.length + 1,   // "#" column. SHORTHAND #3: the list's length is how many rows
+				                   // we've added so far, so length + 1 is the next row number
+				                   // (1, 2, 3...). This replaces the separate "emojiCount" variable.
+				emoji,
+				description,
+				tag,
+				unicode,
+				category.name,     // Same category name for every emoji inside this category
+				subcategory.name,  // Same subcategory name for every emoji inside this subcategory
+				version
+			]);
 		}
 	}
 }
 
-const dataTableRows = document.getElementById("tableContent");
-dataTableRows.innerHTML = rowHtml;
+// ---------------------------------------------------------------------------
+// STEP 2: Give the rows to DataTables and let it build the table.
+//
+// WHY THIS IS MORE EFFICIENT than the original:
+//  - The original glued together one giant HTML string (thousands of
+//    "<td>...</td>" pieces), put it into the page with innerHTML, and then made
+//    DataTables read it all back out again. That's two jobs of converting
+//    text <-> page elements.
+//  - Now we hand DataTables the plain data directly via the "data" option, and
+//    it creates the rows itself. Less work for the browser, and less code.
+//  - We also no longer need to wait for $(document).ready(): our <script> tags
+//    are at the bottom of the <body>, so the table already exists on the page
+//    by the time this code runs.
+// ---------------------------------------------------------------------------
 
-$(document).ready( function() {
-	$('#e').dataTable({
-		/* No ordering applied by DataTables during initialisation */
-		"order": [],
-		"paging": false,
-		layout: {
-			topStart: {
+// "new DataTable('#e', {...})" turns the <table id="e"> into a searchable,
+// sortable table. '#e' is a CSS-style selector meaning "the element with id 'e'".
+new DataTable('#e', {
+	data: rows,       // Our flat list of rows from Step 1. Each setting is written as
+	                  // "settingName: value". The column order matches the <th> headings.
+
+	order: [],        // Don't re-sort the data: keep the original order from emojis.js.
+	paging: false,    // Show every row on one page instead of splitting into pages.
+
+	layout: {
+		// Put the export buttons at the top left of the table.
+		topStart: {
 			buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-			}
 		}
-	});
-})
+	}
+});
 
 </script>
 

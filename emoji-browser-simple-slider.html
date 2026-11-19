@@ -20,19 +20,11 @@
 			<li class="breadcrumb-item active">Emoji Browser - Simple Slider</li>
 		</ol>
 		<hr>
-		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">Normal Versions</a> /
 		<a href="emoji-browser-tweakpane.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
 		<a href="emoji-browser-treeview.html" class="btn btn-primary btn-sm">Treeview</a> / 
 		<a href="emoji-browser-slidevars.html" class="btn btn-primary btn-sm">slideVars</a> / 
 		<a href="emoji-browser-simple-slider.html" class="btn btn-success btn-sm">Simple Slider</a> / 
 		<a href="emoji-browser-table.html" class="btn btn-primary btn-sm">Table</a>
-		<hr>
-		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">AI Revised Versions</a> /
-		<a href="emoji-browser-tweakpane-ai-revised.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
-		<a href="emoji-browser-treeview-ai-revised.html" class="btn btn-primary btn-sm">Treeview</a> / 
-		<a href="emoji-browser-slidevars-ai-revised.html" class="btn btn-primary btn-sm">slideVars</a> / 
-		<a href="emoji-browser-simple-slider-ai-revised.html" class="btn btn-primary btn-sm">Simple Slider</a> / 
-		<a href="emoji-browser-table-ai-revised.html" class="btn btn-primary btn-sm">Table</a>
 		<hr>
 		<div class="card card-body bg-light">
 			<div class="slidecontainer">
@@ -52,74 +44,123 @@
 <script>
 
 // ###############################################################
-// Initialise variables
+// WHAT THIS SCRIPT DOES (big picture)
+// ---------------------------------------------------------------
+// emojis.js gives us two things:
+//   emojiData   - a big "tree" of categories > subcategories > emoji,
+//                 where each emoji has a tag such as "grinning-face"
+//   emojiImages - a simple flat list of every emoji character
+//
+// The slider picks a position in emojiImages. We then show that
+// emoji and its tag name.
+//
+// WHAT WAS IMPROVED:
+//   1. The old code searched the whole tree EVERY time the slider moved.
+//      Now we search it ONCE, store the answers in a lookup, and after
+//      that finding a tag is instant.
+//   2. The old code repeated the same lines twice (page load + slider
+//      move). Now they live in one function that we call twice.
+//   3. The old code used a fixed number (1913) for the slider's maximum.
+//      Now the maximum is worked out from the list itself.
 // ###############################################################
 
-let emojiCount = emojiData.length;
 
 // ###############################################################
-// Assign variables from document
+// Step 1: Grab the parts of the page we need (done once)
 // ###############################################################
 
-let divEmojiData = document.getElementById("emojiDataOutput");
+// document.getElementById("x") finds the HTML element whose id is "x".
+// "const" means this name will always point at the same element.
+const slider        = document.getElementById("rangeEmoji");
+const sliderDisplay = document.getElementById("rangeEmojiDisplay");
+const emojiOutput   = document.getElementById("emojiDataOutput");
+
 
 // ###############################################################
-// Emoji Slider
+// Step 2: Build a lookup of emoji -> tag (done once)
 // ###############################################################
 
-function findEmoji(emoji) {
-	function search(items, position = []) {
-		for (let index = 0; index < items.length; index++) {
-			const item = items[index];
-			const emojiPosition = [...position, index];
-			if (item.emoji === emoji && item.description) {
-				return [
-					emojiPosition,
-					item.name,
-					item.tag,
-					item.description,
-					item.version,
-					item.emoji
-				];
-			}
-			if (Array.isArray(item.children)) {
-				const result = search(item.children, emojiPosition);
-				if (result) {
-					return result;
-				}
-			}
+// A Map is like a dictionary: give it a key (the emoji) and it gives
+// back a value (the tag). Looking something up in a Map is very fast,
+// no matter how many entries it holds.
+const emojiTagLookup = new Map();
+
+// This function walks through a list of items. Some items have a list
+// of "children" inside them, so the function calls ITSELF to walk
+// through those too. A function that calls itself is called "recursion".
+function addEmojisToLookup(items) {
+
+	// "for...of" is a short way to say "do this for each item in the list".
+	// (It replaces the longer "for (let i = 0; i < items.length; i++)"
+	// and the extra "items[i]" that went with it.)
+	for (const item of items) {
+
+		// Only real emoji have a description (categories and
+		// subcategories do not), so we use that to skip the others.
+		// "!emojiTagLookup.has(...)" means "only if we haven't saved this
+		// emoji yet" - so, like the old code, the first match wins.
+		if (item.description && !emojiTagLookup.has(item.emoji)) {
+			emojiTagLookup.set(item.emoji, item.tag);
 		}
-		return null;
+
+		// If this item contains children, dig into them as well.
+		if (item.children) {
+			addEmojisToLookup(item.children);
+		}
 	}
-	return search(emojiData);
 }
 
-// Display Size value - page load
-let rangeInputEmojiValue = document.getElementById("rangeEmoji");
-let emojiValue = document.getElementById("rangeEmoji").value;
-let rangeInputEmojiValueDiv = document.getElementById("rangeEmojiDisplay");
-let currentEmoji = emojiImages[emojiValue];
-const result1 = findEmoji(currentEmoji);
-const currentEmojiTag = result1[2];
-let currentInfo = currentEmoji + " - " + currentEmojiTag;
-let currentTitle = "<h1>" + currentEmojiTag + "</h1>";
-let currentEmojiImg = "<div class='display-1'>" + currentEmoji + "</div>";
-rangeEmojiDisplay.innerHTML = currentInfo;
-divEmojiData.innerHTML = currentTitle + currentEmojiImg;
+// Run it once, when the page loads.
+addEmojisToLookup(emojiData);
 
 
-// rangeSize refresh
-rangeInputEmojiValue.oninput = function() {
-	emojiValue = this.value;
-	currentEmoji = emojiImages[emojiValue];
-	const result2 = findEmoji(currentEmoji);
-	const currentEmojiTag = result2[2];
-	currentInfo = currentEmoji + " - " + currentEmojiTag;
-	currentTitle = "<h1>" + currentEmojiTag + "</h1>";
-	currentEmojiImg = "<div class='display-1'>" + currentEmoji + "</div>";
-	rangeEmojiDisplay.innerHTML = currentInfo;
-	divEmojiData.innerHTML = currentTitle + currentEmojiImg;
+// ###############################################################
+// Step 3: One function that updates the page
+// ###############################################################
+
+// The old code did these steps in two places. Now we write them once.
+function showEmoji() {
+
+	// slider.value is always TEXT (like "42"). Number() turns it into a
+	// real number so it can be used to pick an item from the list.
+	const emoji = emojiImages[Number(slider.value)];
+
+	// Look up the tag. "??" means "if the left side has no answer,
+	// use the right side instead", so we show "unknown" rather than
+	// crashing if an emoji is ever missing.
+	const tag = emojiTagLookup.get(emoji) ?? "unknown";
+
+	// Template literals: text inside `backticks` can contain ${...}
+	// holes, and whatever is inside a hole is dropped into the text.
+	// This is much tidier than joining pieces with + signs.
+	//
+	// textContent puts in plain text only (safer and faster than innerHTML).
+	sliderDisplay.textContent = `${emoji} - ${tag}`;
+
+	// innerHTML is still used here because we WANT the <h1> and <div>
+	// tags to be treated as HTML, not as plain text.
+	emojiOutput.innerHTML = `
+		<h1>${tag}</h1>
+		<div class="display-1">${emoji}</div>
+	`;
 }
+
+
+// ###############################################################
+// Step 4: Set up the slider and show the first emoji
+// ###############################################################
+
+// The slider starts at 0, so its highest position is the list length
+// minus 1 (a list of 3 items uses positions 0, 1 and 2).
+slider.max = emojiImages.length - 1;
+
+// Show the first emoji as soon as the page loads.
+showEmoji();
+
+// addEventListener says "when the 'input' event happens (the slider is
+// being moved), run showEmoji". We pass the function's name WITHOUT
+// brackets, because we want to hand it over to run later, not run it now.
+slider.addEventListener("input", showEmoji);
 
 </script>
 

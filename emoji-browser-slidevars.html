@@ -61,20 +61,12 @@ slide-vars {
 			<li class="breadcrumb-item"><a href="index.html">Emoji Browsers</a></li>
 			<li class="breadcrumb-item active">Emoji Browser - slideVars</li>
 		</ol>
-		<hr>
-		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">Normal Versions</a> /
+    <hr>
 		<a href="emoji-browser-tweakpane.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
 		<a href="emoji-browser-treeview.html" class="btn btn-primary btn-sm">Treeview</a> / 
 		<a href="emoji-browser-slidevars.html" class="btn btn-success btn-sm">slideVars</a> / 
 		<a href="emoji-browser-simple-slider.html" class="btn btn-primary btn-sm">Simple Slider</a> / 
 		<a href="emoji-browser-table.html" class="btn btn-primary btn-sm">Table</a>
-		<hr>
-		<a href="index.html" class="btn btn-default btn-sm disabled" style="width:150px;">AI Revised Versions</a> /
-		<a href="emoji-browser-tweakpane-ai-revised.html" class="btn btn-primary btn-sm">Tweakpane</a> / 
-		<a href="emoji-browser-treeview-ai-revised.html" class="btn btn-primary btn-sm">Treeview</a> / 
-		<a href="emoji-browser-slidevars-ai-revised.html" class="btn btn-primary btn-sm">slideVars</a> / 
-		<a href="emoji-browser-simple-slider-ai-revised.html" class="btn btn-primary btn-sm">Simple Slider</a> / 
-		<a href="emoji-browser-table-ai-revised.html" class="btn btn-primary btn-sm">Table</a>
 		<hr>
 		<p>Browse emojis - adjust display using slider functionality provided by Codepen's <a href="https://codepen.github.io/slideVars/">slideVars UI</a>.</p>
 		<p>The data used to populate the tree browser is stored in a javascript file called <a href="emojis.js">emojis.js</a>, and the emoji data is current as of <a href="https://www.unicode.org/Public/emoji/latest/emoji-test.txt">Emoji Version 18.0</a>. Read more about the version on <a href="https://emojipedia.org/emoji-18.0">Emojipedia</a>.</p>
@@ -105,386 +97,311 @@ slide-vars {
 	<p><a href="https://getbootstrap.com/" rel="nofollow">Bootstrap</a> | <a href="https://codepen.github.io/slideVars/" rel="nofollow">Slidevars</a> | <a href="https://emojipedia.org/" rel="nofollow">Emojipedia</a></p>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
 <script src="emojis.js"></script>
 
 <script id="rendered-js" type="module">
-
-// https://codepen.io/geoffgraham/pen/emdLPyO
-
+// Slider panel setup (CodePen's slideVars library).
 import { slideVars } from "https://esm.sh/@codepen/slidevars";
+
+// SHORTHAND: "arrow function" -> (a, b) => ({ ... })
+// It is a compact way to write a small function. Here each helper takes a few
+// values and returns an object. The extra ( ) around { } tell JavaScript
+// "this is an object I want to return", not the body of the function.
+// SHORTHAND: in { min, max } JavaScript lets you write the name once when the
+// property name and the variable name are the same. It means { min: min, max: max }.
+// This removes the repeated "type / min / max / default / unit" lines.
+const slider = (min, max, def, unit) => ({ type: "slider", min, max, default: def, unit });
+const color = (def) => ({ type: "color", default: def });
 
 slideVars.init(
   {
     "General": {
-      "--emoji-size": {
-        type: "slider",
-        min: 20,
-        max: 250,
-        default: 50,
-        unit: "px"
-      }, "--padding": {
-        type: "slider",
-        min: 0,
-        max: 250,
-        default: 1,
-        unit: "px"
-      }, "--margin": {
-        type: "slider",
-        min: 0,
-        max: 250,
-        default: 3,
-        unit: "px"
-      }, "--rotate": {
-        type: "slider",
-        min: 0,
-        max: 360,
-        default: 0,
-        unit: "deg"
-      }, "--emoji-background": {
-        type: "color",
-        default: "#f1f1f1"
-      }, "--main-background": {
-        type: "color",
-        default: "#ffffff"
-      }
-    }, "Border *": {
-		"--border": {
-        type: "slider",
-        min: 0,
-        max: 150,
-        default: 0,
-        unit: "px"
-      }, "--border-radius": {
-        type: "slider",
-        min: 0,
-        max: 300,
-        default: 5,
-        unit: "px"
-      }, "--border-color": {
-        type: "color",
-        default: "#000000"
-      }
-    }, "Shadow": {
-		"--shadow-depth": {
-        type: "slider",
-        min: 0,
-        max: 5,
-        default: 0,
-        unit: "px"
-      }, "--shadow-color": {
-        type: "color",
-        default: "#333"
-      }
-	}
+      "--emoji-size": slider(20, 250, 50, "px"),
+      "--padding": slider(0, 250, 1, "px"),
+      "--margin": slider(0, 250, 3, "px"),
+      "--rotate": slider(0, 360, 0, "deg"),
+      "--emoji-background": color("#f1f1f1"),
+      "--main-background": color("#ffffff")
+    },
+    "Border *": {
+      "--border": slider(0, 150, 0, "px"),
+      "--border-radius": slider(0, 300, 5, "px"),
+      "--border-color": color("#000000")
+    },
+    "Shadow": {
+      "--shadow-depth": slider(0, 5, 0, "px"),
+      "--shadow-color": color("#333")
+    }
   },
   { defaultOpen: true }
 );
 </script>
 
 <script>
+// ###############################################################
+// 1. FIND THE PAGE ELEMENTS WE NEED (once, at the start)
+// ###############################################################
+// Looking things up in the page is slow-ish, so we do it once and keep the
+// result in a variable. "const" means the variable can't be re-assigned.
+// (The old code used "let" everywhere, and loops like "for(i = 0; ...)" with no
+// "let" at all, which silently creates a global variable. Always declare!)
+
+const byId = (id) => document.getElementById(id); // tiny helper so we type less
+
+const searchInput      = byId("emojiInputFilterField");
+const navPanel         = byId("emojiNav");
+const anchorsList      = byId("emojiAnchors");
+const subAnchorsList   = byId("emojiSubAnchors");
+const emojiOutput      = byId("emojiDataOutput");
+const versionsBox      = byId("emojiVersionsInputs");
+const catButton        = byId("toggleCat");
+const subCatButton     = byId("toggleSubCat");
+const gridListButton   = byId("toggleGridList");
+const toast            = document.querySelector(".js-a");           // "copied" message
+const toastChar        = document.querySelector(".js-copied-char"); // emoji shown in it
 
 // ###############################################################
-// Output the variable name to console
+// 2. ONE PLACE TO STORE WHAT THE USER HAS CHOSEN ("state")
 // ###############################################################
+// Instead of reading the page to find out "is this hidden?", we keep the
+// answers here, and one function (applyFilters) updates the page to match.
 
-// https://stackoverflow.com/a/63158809/4532066
-// const myVar = 10;
-// const myVar2 = 4;
-// console.log({ myVar });
-// console.log({ myVar, myVar2 });
-
-// ###############################################################
-// Initialise variables
-// ###############################################################
-
-let categoryCount = emojiData.length;
-let emojiCount = emojiImages.length;
-let versionsHtml = "";
-let totalEmojiCount = 0;
-let totalEmojiCountTemp = 0;
-let versionsArray = [];
+const state = {
+  query: "",                 // text typed in the search box
+  showCategories: true,      // are category headings visible?
+  showSubcategories: false,  // are subcategory headings visible?
+  selectedVersions: new Set() // which emoji versions are ticked
+};
+// A Set is a list that can't hold duplicates and is very fast at answering
+// "is this item in here?" (set.has(x)). Arrays have to check every item.
 
 // ###############################################################
-// Assign variables from document
+// 3. SMALL HELPER: make text safe to put inside an HTML attribute
 // ###############################################################
-
-let divAnchors = document.getElementById("emojiAnchors");
-let divSubAnchors = document.getElementById("emojiSubAnchors");
-let divEmojiDataOutput = document.getElementById("emojiDataOutput");
-let divEmojiVersionsInputs = document.getElementById("emojiVersionsInputs");
-
-// buttons
-
-let buttonToggleGridList = document.getElementById("toggleGridList");
-let buttonToggleCat = document.getElementById("toggleCat");
-let buttonToggleSubCat = document.getElementById("toggleSubCat");
+// If a description contained a quote mark it would break our HTML string.
+// This swaps risky characters (& < > " ') for their safe "&#number;" codes.
+// SHORTHAND: /[&<>"']/g is a "regular expression": a pattern meaning "any one
+// of these characters", and the g means "find all of them, not just the first".
+// .replace() runs the arrow function on each match.
+const escapeHtml = (text) =>
+  text.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+// SHORTHAND: `backticks` make a "template literal". Anything inside ${ } is
+// calculated and dropped into the text. It replaces "a" + b + "c" joining.
 
 // ###############################################################
-// Display version filter buttons
+// 4. BUILD THE VERSION CHECKBOXES
 // ###############################################################
+// emojiVersions looks like ['E0.6|719', 'E0.7|139', ...]
 
-for(i = 0; i < emojiVersions.length; i++){
-	let version = emojiVersions[i];
-	let list = version.split("|");
-	let versionNum = list[0];
-	let versionNumEmojiCount = list[1];
-	let versionNumDisplay = versionNum.replace("E","");
-	versionsArray.push(versionNum);
-	versionsHtml += "<div class='form-check form-check-inline'><input name='versions' checked class='versions form-check-input' data-selected='N' data-version='" + versionNum + "' type='checkbox' value='" + versionNum + "' id='versionCheck" + versionNum + "'><label class='form-check-label' for='versionCheck" + versionNum + "'>" + versionNumDisplay + " <span class='text-primary text-opacity-25'>[" + versionNumEmojiCount + "]</span></label></div>";
-}
+// .map() runs a function on every item and gives back a new list of results.
+// .join("") then glues that list into one string. This replaces the old
+// "loop + += string + push into another array" pattern.
+const versionsHtml = emojiVersions.map((entry) => {
+  // SHORTHAND (destructuring): split() returns ["E0.6", "719"]. Writing
+  // [version, count] on the left unpacks the two items into two variables
+  // in one line, instead of list[0] and list[1].
+  const [version, count] = entry.split("|");
+  state.selectedVersions.add(version); // start with every version ticked
+  return `
+    <div class="form-check form-check-inline">
+      <input name="versions" checked class="versions form-check-input"
+             type="checkbox" value="${version}" id="versionCheck${version}">
+      <label class="form-check-label" for="versionCheck${version}">
+        ${version.replace("E", "")}
+        <span class="text-primary text-opacity-25">[${count}]</span>
+      </label>
+    </div>`;
+}).join("");
 
-versionsHtml += `<input class="form-check-input" checked="checked" type="checkbox" value="toggle" id="versionsCheckToggle"> <label class="form-check-label" for="versionsCheckToggle">Toggle</label>`;
+versionsBox.innerHTML = versionsHtml + `
+  <input class="form-check-input" checked type="checkbox" value="toggle" id="versionsCheckToggle">
+  <label class="form-check-label" for="versionsCheckToggle">Toggle</label>`;
 
-divEmojiVersionsInputs.innerHTML = versionsHtml;
-
-// ###############################################################
-// Display emojis when page loads
-// ###############################################################
-
-function displayEmojis(versionsArray, fontSize){
-	let returnArray = [];
-	let concatHtmlArr = "";
-	let anchorsHtmlArr = "";
-	let subAnchorsHtmlArr = "";
-	console.log({categoryCount, emojiCount});
-	for(i = 0; i < categoryCount; i++){
-		// -----------------> 01 CATEGORY
-		let catItem = emojiData[i];
-		let catName = catItem.name;
-		let catEmoji = catItem.emoji;
-		let catTag = catItem.tag;
-		let catChildren = catItem.children;
-		let catChildrenCount = catChildren.length;
-		anchorsHtmlArr += "<li class='list-inline-item'><a href='#"+catTag+"'>" + catEmoji + " " + catName + "</a></li>";
-		subAnchorsHtmlArr += "<li class='mt-3'><span style='font-size:30px;'><a href='#"+catTag+"'>" + catEmoji + " " + catName + "</a></span><ul class='list-unstyled'>";
-		concatHtmlArr += "<h2 class='heading-category' id="+catTag+">" + catEmoji + " " + catName + " <a title='jump to top of the page' href='#top'>^</a></h5>";
-		for(ii = 0; ii < catChildrenCount; ii++){
-			// -----------------> 02 SUBCATEGORY
-			let subItem = catChildren[ii];
-			let subName = subItem.name;
-			let subChildren = subItem.children;
-			let subChildrenCount = subChildren.length;
-			// console.log(subChildrenCount);
-			subAnchorsHtmlArr += "<li class='list-inline-item'><a href='#"+subName+"'>" + subName + "</a></li>";
-			concatHtmlArr += "<h5 class='heading-subcategory hidden' id="+subName+">" + subName + " <a title='jump to top of the page' href='#top'>^</a></h5>";
-			for(iii = 0; iii < subChildrenCount; iii++){
-				// -----------------> 03 EMOJI
-				let emjItem = subChildren[iii];
-				let emjName = emjItem.description;
-				let emjEmoji = emjItem.emoji;
-				let emjVersion = emjItem.version;
-				let includeEmoji = versionsArray.indexOf(emjVersion);
-				let includeEmoji2 = versionsArray.includes(emjVersion);
-				let emjTitle = emjName + "\n" + emjEmoji + "\n" + emjVersion + "\n" + subName + "\n" + catName;
-				emjTitle = emjTitle.toLowerCase();
-				if(includeEmoji >= 0) {
-					concatHtmlArr += "<div title='"+emjTitle+"' data-clipboard-text = '" + emjEmoji + "' data-name='" + emjName + "' data-version='" + emjVersion + "' class='emoji row'>";
-					concatHtmlArr += "<div class='row'><span class='spanForEmoji'>" + emjEmoji + "</span></div>";
-					concatHtmlArr += "</div>";
-				}
-				totalEmojiCount++;
-			}
-		}
-		subAnchorsHtmlArr += "</ul></li>";
-	}
-	returnArray.push(anchorsHtmlArr);
-	returnArray.push(subAnchorsHtmlArr);
-	returnArray.push(concatHtmlArr);
-	return returnArray;
-}
-
-// page load first time
-
-let returnArray = displayEmojis(versionsArray);
-let anchorsHtml = returnArray[0];
-let subAnchorsHtml = returnArray[1];
-let concatHtml = returnArray[2];
-setContent(anchorsHtml, subAnchorsHtml, concatHtml);
+// Keep the version checkboxes (not the Toggle one) in a real array for later.
+// SHORTHAND: [...x] is the "spread" operator. querySelectorAll gives a
+// NodeList (array-like, but missing tools like .filter and .map). Spreading
+// it into [ ] copies it into a proper array.
+const versionChecks = [...versionsBox.querySelectorAll(".versions")];
 
 // ###############################################################
-// Emoji Unicode Version Filter - Buttons to Filter Records
+// 5. BUILD THE EMOJI LIST (once, all in memory, one page update)
 // ###############################################################
+// Strategy: build lots of small HTML strings, then put them on the page in a
+// single step. Touching the page is slow, so we do it as few times as possible.
+// (The old code also re-ran this loop logic and counted emojis it never used.)
 
-// listen for any change to change in checkboxes with a class of 'versions'
-// when anything is checked or unchecked, call versionsCheckEmojiRefresh()
+const anchorParts = [];     // category links
+const subAnchorParts = [];  // category + subcategory links
+const emojiParts = [];      // headings + emoji tiles
 
-Array.from(document.getElementsByClassName('versions')).forEach((checkbox) => {
-	checkbox.addEventListener('change', (e)=>{
-		versionsCheckEmojiRefresh();
-	});
-});
+// "for...of" loops over the items in a list directly: no counters (i, ii, iii)
+for (const category of emojiData) {
+  // SHORTHAND (destructuring with rename): pull three properties out of the
+  // category object at once. "name: catName" means "take .name, call it catName".
+  const { name: catName, emoji: catEmoji, tag: catTag } = category;
+  const label = `${catEmoji} ${catName}`;
 
-// toggle all checkbox
+  anchorParts.push(`<li class="list-inline-item"><a href="#${catTag}">${label}</a></li>`);
+  subAnchorParts.push(`<li class="mt-3"><span style="font-size:30px;"><a href="#${catTag}">${label}</a></span><ul class="list-unstyled">`);
+  emojiParts.push(`<h2 class="heading-category" id="${catTag}">${label} <a title="jump to top of the page" href="#top">^</a></h2>`);
 
-document.getElementById('versionsCheckToggle').addEventListener('change', function () {
+  for (const sub of category.children) {
+    const subName = sub.name;
+    subAnchorParts.push(`<li class="list-inline-item"><a href="#${subName}">${subName}</a></li>`);
+    emojiParts.push(`<h5 class="heading-subcategory hidden" id="${subName}">${subName} <a title="jump to top of the page" href="#top">^</a></h5>`);
 
-	const versionChecks = document.querySelectorAll('.versions');
-		versionChecks.forEach(function (checkbox) {
-		checkbox.checked = this.checked;
-	}, this);
-	versionsCheckEmojiRefresh();
-});
+    for (const item of sub.children) {
+      const { description, emoji, version } = item;
+      // This text is both the hover tooltip AND what the search box looks through.
+      const searchText = `${description}\n${emoji}\n${version}\n${subName}\n${catName}`.toLowerCase();
 
-function versionsCheckEmojiRefresh(){
-	versionsArray = Array.from(document.querySelectorAll("input[type=checkbox][name=versions]:checked"), e => e.value);
-	Array.from(document.getElementsByClassName('emoji')).forEach((emoji) => {
-		const thisVersion = emoji.dataset.version;
-		const thisVersionArr = versionsArray.indexOf(thisVersion);
-		const thisText = emoji.dataset.clipboardText;
-		if(thisVersionArr < 0){
-			emoji.classList.add("hidden");
-		} else {
-			emoji.classList.remove("hidden");
-		}
-	})
-}
-
-// ###############################################################
-// Toggle Heading and Subheading buttons
-// ###############################################################
-
-// Toggle headings
-
-buttonToggleCat.addEventListener("click", function(e){
-	toggleHeadings(buttonToggleCat, "category");
-	divAnchors.classList.toggle("hidden");
-});
-
-// Toggle subheadings
-
-buttonToggleSubCat.addEventListener("click", function(e){
-	toggleHeadings(buttonToggleSubCat, "subcategory");
-	divSubAnchors.classList.toggle("hidden");
-});
-
-// toggleHeadings function
-
-function toggleHeadings(buttonName, headingType){
-	let className = "heading-" + headingType;
-	const collectionHeadings = document.getElementsByClassName(className);
-	let collectionHeadingsLength = collectionHeadings.length;
-	// headings logic
-	if(buttonName.textContent === "Show headings"){
-		buttonName.textContent = "Hide headings";
-	} else if(buttonName.textContent === "Hide headings"){
-		buttonName.textContent = "Show headings";
-	// subheadings logic
-	} else if(buttonName.textContent === "Show subheadings"){
-		buttonName.textContent = "Hide subheadings";
-	} else if(buttonName.textContent === "Hide subheadings"){
-		buttonName.textContent = "Show subheadings";
-	}
-	for(i = 0; i < collectionHeadingsLength; i++){
-		collectionHeadings[i].classList.toggle("hidden");
-	}
-}
-
-// ###############################################################
-// Set HTML content for Divs
-// ###############################################################
-
-function setContent(anchorsHtml, subAnchorsHtml, concatHtml) {
-	divAnchors.innerHTML = anchorsHtml;
-	divSubAnchors.innerHTML = subAnchorsHtml
-	divEmojiDataOutput.innerHTML = concatHtml;
-}
-
-let divEmojiData = document.getElementById("emojiData");
-let spanEmojiRecords = divEmojiDataOutput.getElementsByClassName('emoji');
-
-// ###############################################################
-// Toggle Grid and List view buttons
-// ###############################################################
-
-// Toggle Grid List
-
-buttonToggleGridList.addEventListener("click", function(e){
-	let clickedButtonText = e.target.textContent;
-	let clickedButtonCurrentView = e.target.getAttribute('data-current-view');
-	if(clickedButtonCurrentView === "grid"){
-		e.target.textContent = "Grid View";
-		e.target.setAttribute("data-current-view", "list");
-		divEmojiData.classList.remove("flex1");
-		divEmojiData.classList.remove("flex1-wrap");
-		for(i = 0; i < spanEmojiRecords.length; i++){
-			let thisSpan = spanEmojiRecords[i];
-			if(thisSpan.getElementsByClassName('spanForEmojiText')[0].classList.contains('hidden')){
-				thisSpan.getElementsByClassName('spanForEmojiText')[0].classList.remove("hidden");
-			}
-		}
-	} else if (clickedButtonCurrentView === "list"){
-		// alert(0);
-		e.target.title = "List View";
-		e.target.textContent = "List View";
-		e.target.setAttribute("data-current-view", "grid");
-		divEmojiData.classList.add("flex1");
-		divEmojiData.classList.add("flex1-wrap");
-		for(i = 0; i < spanEmojiRecords.length; i++){
-			let thisSpan = spanEmojiRecords[i];
-			thisSpan.getElementsByClassName('spanForEmojiText')[0].classList.toggle("hidden");
-		}
-	}
-});
-
-// ###############################################################
-// Function showHideEmojis event
-// ###############################################################
-
-function showHideEmojis(clickedButtonVersion){
-	totalEmojiCount = emojiCount;
-	for(i = 0;i < itemsByClassEmojisLen; i++){
-		let loopEmoji = itemsByClassEmojis[i];
-		let loopEmojiVersion = loopEmoji.getAttribute('data-version');
-		if(clickedButtonVersion != loopEmojiVersion){
-			loopEmoji.classList.toggle("hidden");
-			totalEmojiCount--;
-		}
-	}
-	totalEmojiCountTemp = totalEmojiCount;
-	return(totalEmojiCountTemp);
-}
-
-$(document).ready(function() {
-
-	var r = new ClipboardJS(".emoji");
-	r.on("success", function(t) {
-		console.log(1);
-		$(".js-a").removeClass("show error").addClass("show")
-	  , $(".js-copied-char").text(t.text)
-	  , setTimeout(function() {
-			$(".js-a").removeClass("show")
-		}, 1250)
-	  , t.clearSelection()
-	});
-	
-});
-
-// ###############################################################
-// Emoji text filter
-// ###############################################################
-
-$('[data-search]').on('keyup', function(e) {
-  e.stopPropagation();
-  let searchVal = $(this).val();
-  let filterItems = $('[title]');
-  let catHeadings = $('.heading-category');
-  let subHeadings = $('.heading-subcategory');
-  let emjNav = $('#emojiNav');
-  if (searchVal != '') {
-    filterItems.addClass('hidden');
-	catHeadings.addClass('hidden');
-	subHeadings.addClass('hidden');
-	emjNav.addClass('hidden');
-    $('[title*="' + searchVal.toLowerCase() + '"]').removeClass('hidden');
-  } else {
-    filterItems.removeClass('hidden');
-	catHeadings.removeClass('hidden');
-	emjNav.removeClass('hidden');
+      emojiParts.push(
+        `<div title="${escapeHtml(searchText)}" data-clipboard-text="${emoji}" data-version="${version}" class="emoji row">` +
+        `<div class="row"><span class="spanForEmoji">${emoji}</span></div></div>`
+      );
+    }
   }
+  subAnchorParts.push("</ul></li>");
+}
+
+// Put everything on the page: three updates in total.
+anchorsList.innerHTML    = anchorParts.join("");
+subAnchorsList.innerHTML = subAnchorParts.join("");
+emojiOutput.innerHTML    = emojiParts.join("");
+
+// ###############################################################
+// 6. REMEMBER THE ELEMENTS SO FILTERING IS FAST
+// ###############################################################
+// Now that the tiles exist, collect each one ONCE along with the info we
+// need. Later filtering just loops over this list; it never re-searches the page.
+const emojiItems = [...emojiOutput.querySelectorAll(".emoji")].map((el) => ({
+  el,                       // SHORTHAND: same as el: el
+  version: el.dataset.version, // dataset.version reads the data-version="..." attribute
+  text: el.title            // the lowercase search text from above
+}));
+
+const categoryHeadings    = [...emojiOutput.querySelectorAll(".heading-category")];
+const subcategoryHeadings = [...emojiOutput.querySelectorAll(".heading-subcategory")];
+
+// ###############################################################
+// 7. THE ONE FUNCTION THAT UPDATES WHAT IS VISIBLE
+// ###############################################################
+// Both the version checkboxes and the search box call this, so they always
+// work together. (Before, clearing the search box un-hid emojis from
+// versions you had switched off.)
+
+function applyFilters() {
+  const { query, selectedVersions } = state;
+
+  for (const { el, version, text } of emojiItems) {
+    // Visible only if its version is ticked AND its text contains the search.
+    // "".includes("") is true, so an empty search matches everything.
+    const visible = selectedVersions.has(version) && text.includes(query);
+    // classList.toggle(name, true/false) adds the class if 2nd value is true,
+    // removes it if false. One line replaces an if/else with add and remove.
+    el.classList.toggle("hidden", !visible);
+  }
+  updateHeadings();
+}
+
+function updateHeadings() {
+  const searching = state.query !== "";
+  // SHORTHAND: || means "or". While searching, headings are hidden no matter
+  // what; otherwise they follow the toggle buttons.
+  const hideCats = searching || !state.showCategories;
+  const hideSubs = searching || !state.showSubcategories;
+
+  // forEach runs a function for each item. (h) => ... is an arrow function.
+  categoryHeadings.forEach((h) => h.classList.toggle("hidden", hideCats));
+  subcategoryHeadings.forEach((h) => h.classList.toggle("hidden", hideSubs));
+  anchorsList.classList.toggle("hidden", !state.showCategories);
+  subAnchorsList.classList.toggle("hidden", !state.showSubcategories);
+  navPanel.classList.toggle("hidden", searching);
+}
+
+// ###############################################################
+// 8. EVENT LISTENERS (what happens when the user does something)
+// ###############################################################
+
+// --- Version checkboxes -------------------------------------------------
+// EVENT DELEGATION: instead of attaching a listener to every checkbox, we
+// attach ONE to the box that contains them. Events "bubble up" from the
+// clicked checkbox to its parents, and e.target tells us which one it was.
+versionsBox.addEventListener("change", (e) => {
+  if (e.target.id === "versionsCheckToggle") {
+    // The Toggle box ticks or unticks all the others.
+    versionChecks.forEach((box) => (box.checked = e.target.checked));
+  }
+  // Rebuild the Set from whichever boxes are ticked now.
+  // .filter() keeps only items where the function returns true; .map() then
+  // turns each box into its value (e.g. "E1.0").
+  state.selectedVersions = new Set(
+    versionChecks.filter((box) => box.checked).map((box) => box.value)
+  );
+  applyFilters();
 });
 
+// --- Search box ---------------------------------------------------------
+// "input" fires on every change (typing, pasting, clicking the little X).
+// The old "keyup" missed pastes. DEBOUNCING: we wait 150ms after the last
+// keystroke before searching, so fast typing doesn't run the filter on
+// every letter. Each new keystroke cancels the previous timer.
+let searchTimer;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    state.query = searchInput.value.trim().toLowerCase();
+    applyFilters();
+  }, 150);
+});
+
+// --- Show/Hide headings buttons ----------------------------------------
+// One function builds the click handler for both buttons, instead of two
+// copies of near-identical code plus a long if / else if chain on button text.
+function wireHeadingButton(button, stateKey, noun) {
+  button.addEventListener("click", () => {
+    state[stateKey] = !state[stateKey]; // ! flips true <-> false
+    // SHORTHAND: condition ? valueIfTrue : valueIfFalse (the "ternary").
+    // A one-line if/else that produces a value.
+    button.textContent = `${state[stateKey] ? "Hide" : "Show"} ${noun}`;
+    updateHeadings();
+  });
+}
+wireHeadingButton(catButton, "showCategories", "headings");
+wireHeadingButton(subCatButton, "showSubcategories", "subheadings");
+
+// --- Grid / List view button -------------------------------------------
+// (The old code looked for an element id "emojiData" and a class
+// "spanForEmojiText" that don't exist in the page, so this button errored.
+// All it really needs to do is add or remove the two layout classes.)
+gridListButton.addEventListener("click", () => {
+  const wasGrid = gridListButton.dataset.currentView === "grid";
+  gridListButton.dataset.currentView = wasGrid ? "list" : "grid";
+  gridListButton.textContent = wasGrid ? "Grid View" : "List View";
+  gridListButton.title = wasGrid ? "Display as grid" : "Display as list";
+  // toggle(name, false) removes, toggle(name, true) adds.
+  // Going to list view removes the flex classes; going back adds them.
+  emojiOutput.classList.toggle("flex1", !wasGrid);
+  emojiOutput.classList.toggle("flex1-wrap", !wasGrid);
+});
+
+// --- Click an emoji to copy it -----------------------------------------
+// ClipboardJS watches every ".emoji" tile and copies its data-clipboard-text.
+// This script sits at the end of <body>, so the page already exists and we
+// don't need jQuery's $(document).ready(...) wrapper any more.
+let toastTimer;
+new ClipboardJS(".emoji").on("success", (e) => {
+  toastChar.textContent = e.text;
+  toast.classList.remove("error");
+  toast.classList.add("show");
+  clearTimeout(toastTimer); // restart the 1.25s timer if you click again quickly
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 1250);
+  e.clearSelection();
+});
+
+// Set the headings to match the starting state (subheadings start hidden).
+updateHeadings();
 </script>
 
 </body>
